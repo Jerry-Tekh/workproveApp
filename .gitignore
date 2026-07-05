@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Next.js build output
+.next/
+out/
+dist/
+
+# Environment files with secrets
+.env
+.env.local
+.env.*.local
+
+# Python cache/test output
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# TypeScript/build caches
+*.tsbuildinfo
+
+# Logs and OS/editor files
+*.log
+.DS_Store
+.vscode/
+.idea/
+
+# Hosting/build artifacts
+.vercel/

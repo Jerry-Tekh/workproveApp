@@ -1,0 +1,4 @@
+# GenLayer test framework — use >= to get latest compatible version
+genlayer-test>=0.6.0
+# Pytest 9.x is current stable (9.1.0 as of June 2026)
+pytest>=9.0.0

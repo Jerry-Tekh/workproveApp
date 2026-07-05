@@ -1,0 +1,14 @@
+{
+  "name": "workproof-contract",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "deploy:localnet": "node deploy.mjs localnet",
+    "deploy:studionet": "node deploy.mjs studionet",
+    "deploy:testnet": "node deploy.mjs testnet-bradbury"
+  },
+  "dependencies": {
+    "genlayer-js": "^1.1.8"
+  }
+}
