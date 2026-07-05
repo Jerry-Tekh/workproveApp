@@ -28,8 +28,6 @@ class WorkProof(gl.Contract):
 
     def __init__(self, treasury_address: str) -> None:
         self.treasury = treasury_address
-        self.jobs     = TreeMap()
-        self.job_ids  = DynArray()
 
     def _load_job(self, job_id):
         return json.loads(self.jobs[job_id])
