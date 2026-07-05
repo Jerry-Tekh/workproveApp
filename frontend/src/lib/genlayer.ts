@@ -37,6 +37,7 @@ const CHAIN_MAP: Record<string, GenLayerChain> = {
 };
 
 const NETWORK = process.env.NEXT_PUBLIC_GENLAYER_NETWORK || "testnet-bradbury";
+const ACTIVE_CHAIN = CHAIN_MAP[NETWORK] ?? testnetBradbury;
 export const CONTRACT_ADDRESS =
   process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || "";
 
@@ -52,11 +53,10 @@ if (typeof window !== "undefined" && !CONTRACT_ADDRESS) {
 // ─────────────────────────────────────────────────────────
 
 export function makeClient(signerAddress?: string) {
-  const chain = CHAIN_MAP[NETWORK] ?? testnetBradbury;
   const provider =
     typeof window !== "undefined" && signerAddress ? window.ethereum : undefined;
   return createClient({
-    chain,
+    chain: ACTIVE_CHAIN,
     ...(signerAddress ? { account: signerAddress as `0x${string}` } : {}),
     ...(provider ? { provider } : {}),
   });
@@ -280,7 +280,9 @@ export async function reclaimExpiredJob(
 export async function waitForTx(hash: `0x${string}`) {
   return getReadClient().waitForTransactionReceipt({
     hash: hash as Hash,
-    status: TransactionStatus.FINALIZED,
+    status: ACTIVE_CHAIN.isStudio
+      ? TransactionStatus.ACCEPTED
+      : TransactionStatus.FINALIZED,
   });
 }
 
