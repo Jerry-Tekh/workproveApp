@@ -115,6 +115,41 @@ export function extractErrorMessage(err: unknown): string {
   return String(err);
 }
 
+function hexToText(hex: string): string {
+  const clean = hex.startsWith("0x") ? hex.slice(2) : hex;
+  const bytes = clean.match(/.{1,2}/g) ?? [];
+  return bytes
+    .map((byte) => String.fromCharCode(Number.parseInt(byte, 16)))
+    .join("");
+}
+
+function extractTraceMessage(trace: unknown): string | null {
+  if (!trace || typeof trace !== "object") return null;
+  const returnData = (trace as { return_data?: unknown }).return_data;
+  if (typeof returnData !== "string" || !returnData.startsWith("0x")) {
+    return null;
+  }
+
+  const candidates =
+    hexToText(returnData).match(/[A-Za-z0-9_ .,'":;!?()/-]{8,}/g) ?? [];
+  return (
+    candidates.find((text) =>
+      /already exists|required|cannot|must|only|invalid|deadline|payment|error/i.test(text)
+    )?.trim() ?? null
+  );
+}
+
+async function getTxFailureMessage(hash: `0x${string}`): Promise<string | null> {
+  try {
+    const trace = await getReadClient().debugTraceTransaction({
+      hash: hash as Hash,
+    });
+    return extractTraceMessage(trace);
+  } catch {
+    return null;
+  }
+}
+
 // ─────────────────────────────────────────────────────────
 // Contract read helpers
 // ─────────────────────────────────────────────────────────
@@ -273,17 +308,29 @@ export async function reclaimExpiredJob(
 }
 
 // ─────────────────────────────────────────────────────────
-// Wait for transaction finalization
-// Uses TransactionStatus enum per the live GenLayerJS docs.
+// Wait until consensus accepts the transaction.
+// FINALIZED can lag on public testnets, so the UI treats ACCEPTED as success.
 // ─────────────────────────────────────────────────────────
 
 export async function waitForTx(hash: `0x${string}`) {
-  return getReadClient().waitForTransactionReceipt({
+  const receipt = await getReadClient().waitForTransactionReceipt({
     hash: hash as Hash,
-    status: ACTIVE_CHAIN.isStudio
-      ? TransactionStatus.ACCEPTED
-      : TransactionStatus.FINALIZED,
+    status: TransactionStatus.ACCEPTED,
+    interval: 5000,
+    retries: 60,
   });
+
+  const executionResult = String(
+    (receipt as { txExecutionResultName?: unknown }).txExecutionResultName ?? ""
+  );
+  if (executionResult === "FINISHED_WITH_ERROR") {
+    const message = await getTxFailureMessage(hash);
+    throw new Error(
+      message || "Transaction was accepted, but contract execution failed."
+    );
+  }
+
+  return receipt;
 }
 
 // ─────────────────────────────────────────────────────────
