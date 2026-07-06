@@ -110,6 +110,12 @@ export function extractErrorMessage(err: unknown): string {
     // GenLayer UserError messages arrive wrapped in JSON-RPC error data
     const match = msg.match(/UserError[:\s]*["']?([^"'\n]+)/i);
     if (match) return match[1].trim();
+    if (/internal error/i.test(msg)) {
+      return (
+        "GenLayer Bradbury RPC returned a temporary internal error. " +
+        "Refresh in a few seconds; your transaction may still have succeeded."
+      );
+    }
     return msg;
   }
   return String(err);
@@ -139,6 +145,31 @@ function extractTraceMessage(trace: unknown): string | null {
   );
 }
 
+function isRetryableRpcError(err: unknown): boolean {
+  const message = err instanceof Error ? err.message : String(err);
+  return /internal error|fetch failed|timeout|timed out|network error|rate limit/i.test(
+    message
+  );
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function withRpcRetry<T>(fn: () => Promise<T>): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastError = err;
+      if (!isRetryableRpcError(err) || attempt === 3) break;
+      await sleep(800 * (attempt + 1));
+    }
+  }
+  throw lastError;
+}
+
 async function getTxFailureMessage(hash: `0x${string}`): Promise<string | null> {
   try {
     const trace = await getReadClient().debugTraceTransaction({
@@ -165,21 +196,25 @@ function assertContractConfigured() {
 
 export async function getJob(jobId: string): Promise<Job> {
   assertContractConfigured();
-  const result = await getReadClient().readContract({
-    address: CONTRACT_ADDRESS as `0x${string}`,
-    functionName: "get_job",
-    args: [jobId],
-  });
+  const result = await withRpcRetry(() =>
+    getReadClient().readContract({
+      address: CONTRACT_ADDRESS as `0x${string}`,
+      functionName: "get_job",
+      args: [jobId],
+    })
+  );
   return result as unknown as Job;
 }
 
 export async function listJobs(offset = 0, limit = 20): Promise<JobSummary[]> {
   assertContractConfigured();
-  const result = await getReadClient().readContract({
-    address: CONTRACT_ADDRESS as `0x${string}`,
-    functionName: "list_jobs",
-    args: [offset, limit],
-  });
+  const result = await withRpcRetry(() =>
+    getReadClient().readContract({
+      address: CONTRACT_ADDRESS as `0x${string}`,
+      functionName: "list_jobs",
+      args: [offset, limit],
+    })
+  );
   return result as unknown as JobSummary[];
 }
 
@@ -189,21 +224,25 @@ export async function listJobsByStatus(
   limit = 20
 ): Promise<JobSummary[]> {
   assertContractConfigured();
-  const result = await getReadClient().readContract({
-    address: CONTRACT_ADDRESS as `0x${string}`,
-    functionName: "list_jobs_by_status",
-    args: [status, offset, limit],
-  });
+  const result = await withRpcRetry(() =>
+    getReadClient().readContract({
+      address: CONTRACT_ADDRESS as `0x${string}`,
+      functionName: "list_jobs_by_status",
+      args: [status, offset, limit],
+    })
+  );
   return result as unknown as JobSummary[];
 }
 
 export async function jobCount(): Promise<number> {
   assertContractConfigured();
-  const result = await getReadClient().readContract({
-    address: CONTRACT_ADDRESS as `0x${string}`,
-    functionName: "job_count",
-    args: [],
-  });
+  const result = await withRpcRetry(() =>
+    getReadClient().readContract({
+      address: CONTRACT_ADDRESS as `0x${string}`,
+      functionName: "job_count",
+      args: [],
+    })
+  );
   return Number(result);
 }
 
