@@ -48,6 +48,45 @@ function loadEnvFile(path) {
 loadEnvFile(join(__dirname, ".env.local"));
 loadEnvFile(join(__dirname, ".env"));
 
+function getDeployContractAddress(receipt) {
+  return (
+    receipt.data?.contract_address ||
+    receipt.data?.contractAddress ||
+    receipt.txDataDecoded?.contractAddress ||
+    receipt.recipient
+  );
+}
+
+async function waitForDeployReceipt(client, txHash) {
+  console.log("Waiting for acceptance...");
+
+  const acceptedReceipt = await client.waitForTransactionReceipt({
+    hash: txHash,
+    status: TransactionStatus.ACCEPTED,
+    interval: 5000,
+    retries: 60,
+  });
+
+  console.log("Deploy transaction accepted.");
+  console.log("Waiting for finalization (this can take several minutes on testnet)...");
+
+  try {
+    return await client.waitForTransactionReceipt({
+      hash: txHash,
+      status: TransactionStatus.FINALIZED,
+      interval: 5000,
+      retries: 120,
+    });
+  } catch (err) {
+    console.warn(
+      "\nFinalization was not observed before timeout. " +
+      "Using the accepted deploy receipt instead."
+    );
+    console.warn(err?.message || err);
+    return acceptedReceipt;
+  }
+}
+
 const CHAINS = {
   localnet,
   studionet,
@@ -93,14 +132,9 @@ async function main() {
   });
 
   console.log(`Deploy tx submitted: ${txHash}`);
-  console.log("Waiting for finalization (this can take ~30-60s on testnet)...");
+  const receipt = await waitForDeployReceipt(client, txHash);
 
-  const receipt = await client.waitForTransactionReceipt({
-    hash: txHash,
-    status: TransactionStatus.FINALIZED,
-  });
-
-  const contractAddress = receipt.data?.contract_address;
+  const contractAddress = getDeployContractAddress(receipt);
 
   if (!contractAddress) {
     console.error("Deploy finalized but no contract_address found in receipt.");
