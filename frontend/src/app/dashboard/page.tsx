@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
-  listJobs, formatGEN, extractErrorMessage, CONTRACT_ADDRESS, type JobSummary,
+  listJobs, formatGEN, extractErrorMessage, getDisplayStatus, CONTRACT_ADDRESS,
+  type JobSummary,
 } from "@/lib/genlayer";
 import { useWallet } from "@/lib/useWallet";
 import {
@@ -179,7 +180,7 @@ function JobRow({ job }: { job: JobSummary }) {
               </span>
             </div>
           </div>
-          <StatusBadge status={job.status} />
+          <StatusBadge status={getDisplayStatus(job)} />
         </div>
       </Card>
     </Link>

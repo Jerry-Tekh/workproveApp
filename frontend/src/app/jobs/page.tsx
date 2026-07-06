@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   listJobs,
-  listJobsByStatus,
   formatGEN,
   extractErrorMessage,
+  getDisplayStatus,
   CONTRACT_ADDRESS,
   type JobSummary,
   type JobStatus,
@@ -17,6 +17,7 @@ const FILTERS: { label: string; value: JobStatus | "all" }[] = [
   { label: "Open",        value: "open" },
   { label: "In Progress", value: "in_progress" },
   { label: "Completed",   value: "completed" },
+  { label: "Expired",     value: "expired" },
   { label: "All",         value: "all" },
 ];
 
@@ -34,8 +35,13 @@ export default function JobsPage() {
     }
     setLoading(true);
     setError(null);
-    const req = filter === "all" ? listJobs(0, 50) : listJobsByStatus(filter, 0, 50);
-    req.then(setJobs)
+    listJobs(0, 50)
+       .then((items) =>
+         filter === "all"
+           ? items
+           : items.filter((job) => getDisplayStatus(job) === filter)
+       )
+       .then(setJobs)
        .catch((e) => setError(extractErrorMessage(e)))
        .finally(() => setLoading(false));
   }, [filter]);
@@ -116,7 +122,7 @@ export default function JobsPage() {
                     {job.criteria}
                   </p>
                 </div>
-                <StatusBadge status={job.status} />
+                <StatusBadge status={getDisplayStatus(job)} />
               </div>
               <div className="flex flex-wrap gap-2 sm:gap-3 text-xs text-zinc-500">
                 <span className="bg-zinc-800 px-2.5 py-1 rounded-full font-mono">

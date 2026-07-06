@@ -215,7 +215,7 @@ export async function listJobs(offset = 0, limit = 20): Promise<JobSummary[]> {
       args: [offset, limit],
     })
   );
-  return result as unknown as JobSummary[];
+  return enrichJobSummaries(result as unknown as JobSummary[]);
 }
 
 export async function listJobsByStatus(
@@ -231,7 +231,7 @@ export async function listJobsByStatus(
       args: [status, offset, limit],
     })
   );
-  return result as unknown as JobSummary[];
+  return enrichJobSummaries(result as unknown as JobSummary[]);
 }
 
 export async function jobCount(): Promise<number> {
@@ -244,6 +244,41 @@ export async function jobCount(): Promise<number> {
     })
   );
   return Number(result);
+}
+
+async function enrichJobSummaries(
+  summaries: JobSummary[]
+): Promise<JobSummary[]> {
+  return Promise.all(
+    summaries.map(async (summary) => {
+      if (typeof summary.deadline_ts === "number") return summary;
+      try {
+        const detail = await getJob(summary.job_id);
+        return {
+          ...summary,
+          deadline_ts: detail.deadline_ts,
+          status: detail.status,
+          freelancer: detail.freelancer,
+        };
+      } catch {
+        return summary;
+      }
+    })
+  );
+}
+
+export function getDisplayStatus(
+  job: Pick<Job, "status" | "deadline_ts"> | Pick<JobSummary, "status" | "deadline_ts">
+): JobStatus {
+  const deadlineTs = Number(job.deadline_ts || 0);
+  if (
+    job.status === "open" &&
+    deadlineTs > 0 &&
+    Math.floor(Date.now() / 1000) > deadlineTs
+  ) {
+    return "expired";
+  }
+  return job.status;
 }
 
 // ─────────────────────────────────────────────────────────
@@ -406,6 +441,7 @@ export interface JobSummary {
   client: string;
   criteria: string;
   payment_wei: string;
+  deadline_ts?: number;
   status: JobStatus;
   revisions_left: number;
   freelancer?: string;

@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import {
   getJob, acceptJob, submitWork, cancelJob, reclaimExpiredJob,
-  waitForTx, formatGEN, extractErrorMessage, CONTRACT_ADDRESS, type Job,
+  waitForTx, formatGEN, extractErrorMessage, getDisplayStatus, CONTRACT_ADDRESS,
+  type Job,
 } from "@/lib/genlayer";
 import { useWallet } from "@/lib/useWallet";
 import {
@@ -141,6 +142,7 @@ export default function JobDetailPage() {
   const isFreelancer = !!address && !!job.freelancer && address.toLowerCase() === job.freelancer.toLowerCase();
   const deadlineDate = new Date(job.deadline_ts * 1000);
   const isPastDeadline = Date.now() / 1000 > job.deadline_ts;
+  const displayStatus = getDisplayStatus(job);
 
   return (
     <div className="max-w-2xl mx-auto space-y-5 sm:space-y-6">
@@ -158,7 +160,7 @@ export default function JobDetailPage() {
 
       {/* Status badge row */}
       <div className="flex items-center gap-3 flex-wrap">
-        <StatusBadge status={job.status} />
+        <StatusBadge status={displayStatus} />
         {job.score >= 0 && (
           <span className="text-xs text-zinc-500">Score: {job.score}/100</span>
         )}
@@ -347,7 +349,7 @@ export default function JobDetailPage() {
       )}
 
       {/* Status cards */}
-      {job.status === "expired" && (
+      {displayStatus === "expired" && (
         <Card className="border-rose-800 bg-rose-950/20 space-y-2">
           <p className="font-semibold text-rose-300">Job Expired</p>
           <p className="text-sm text-rose-400/80">
