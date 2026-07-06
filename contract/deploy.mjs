@@ -3,8 +3,9 @@
  * Usage: node deploy.mjs [localnet|studionet|testnet-asimov|testnet-bradbury]
  *
  * Reads contract from ../contract/workproof.py
- * Requires PRIVATE_KEY env var (account that signs the deploy tx)
- * Optional TREASURY_ADDRESS env var (defaults to deployer address)
+ * Requires PRIVATE_KEY from the shell environment or contract/.env.local
+ * Optional TREASURY_ADDRESS from the shell environment or contract/.env.local
+ * (defaults to deployer address)
  */
 
 import { createClient, createAccount } from "genlayer-js";
@@ -15,11 +16,37 @@ import {
   testnetAsimov,
   testnetBradbury,
 } from "genlayer-js/chains";
-import { readFileSync, writeFileSync } from "fs";
+import { existsSync, readFileSync, writeFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
+function loadEnvFile(path) {
+  if (!existsSync(path)) return;
+
+  for (const line of readFileSync(path, "utf8").split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+
+    const match = trimmed.match(/^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/);
+    if (!match) continue;
+
+    const key = match[1];
+    if (process.env[key] !== undefined) continue;
+
+    let value = match[2].trim();
+    const quoted =
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"));
+    if (quoted) value = value.slice(1, -1);
+
+    process.env[key] = value;
+  }
+}
+
+loadEnvFile(join(__dirname, ".env.local"));
+loadEnvFile(join(__dirname, ".env"));
 
 const CHAINS = {
   localnet,
