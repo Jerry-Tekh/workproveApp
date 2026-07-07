@@ -2,37 +2,49 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="space-y-14 sm:space-y-20">
+    <div className="space-y-12 sm:space-y-16">
 
       {/* Hero */}
-      <section className="text-center space-y-5 pt-4 sm:pt-8 pb-2">
-        <div className="inline-block bg-emerald-950 border border-emerald-800 text-emerald-300 text-xs font-semibold px-3 py-1.5 rounded-full">
-          Built on GenLayer · Testnet Bradbury
-        </div>
-        <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.1]">
-          Freelance payments,
-          <br />
-          <span className="text-emerald-400">verified by AI.</span>
-        </h1>
-        <p className="text-zinc-400 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed px-2">
-          WorkProof escrows your payment on-chain. When you submit, an
-          Intelligent Contract reads your work, scores it against the criteria,
-          and releases funds instantly — no 20% platform fee, no 14-day holds,
-          no biased humans.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2 px-4 sm:px-0">
-          <Link
-            href="/jobs/new"
-            className="bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-white font-semibold px-8 py-3.5 sm:py-3 rounded-xl transition text-sm text-center"
-          >
-            Post a Job
-          </Link>
-          <Link
-            href="/jobs"
-            className="bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-900 border border-zinc-700 text-zinc-100 font-semibold px-8 py-3.5 sm:py-3 rounded-xl transition text-sm text-center"
-          >
-            Browse Open Jobs
-          </Link>
+      <section
+        className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden border-y border-zinc-800 bg-zinc-950"
+        style={{
+          backgroundImage: 'url("/images.jfif")',
+          backgroundPosition: "center",
+          backgroundSize: "cover",
+        }}
+      >
+        <div className="absolute inset-0 bg-zinc-950/70" />
+        <div className="relative mx-auto flex min-h-[560px] max-w-5xl items-center justify-center px-4 py-16 sm:min-h-[620px] sm:px-6">
+          <div className="max-w-3xl text-center space-y-5">
+            <div className="inline-block bg-zinc-950/75 border border-emerald-700 text-emerald-300 text-xs font-semibold px-3 py-1.5 rounded-full">
+              Built on GenLayer · Testnet Bradbury
+            </div>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.1] text-white">
+              Freelance payments,
+              <br />
+              <span className="text-emerald-300">verified by AI.</span>
+            </h1>
+            <p className="text-zinc-200 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed px-2">
+              WorkProof escrows your payment on-chain. When you submit, an
+              Intelligent Contract reads your work, scores it against the criteria,
+              and releases funds instantly — no 20% platform fee, no 14-day holds,
+              no biased humans.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2 px-4 sm:px-0">
+              <Link
+                href="/jobs/new"
+                className="bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-white font-semibold px-8 py-3.5 sm:py-3 rounded-xl transition text-sm text-center"
+              >
+                Post a Job
+              </Link>
+              <Link
+                href="/jobs"
+                className="bg-zinc-950/80 hover:bg-zinc-900 active:bg-zinc-950 border border-zinc-600 text-zinc-100 font-semibold px-8 py-3.5 sm:py-3 rounded-xl transition text-sm text-center"
+              >
+                Browse Open Jobs
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 
